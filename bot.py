@@ -20,7 +20,7 @@ SAVE_FOLDER = 'books'
 @bot.message_handler(commands=['start'])  # обработка команды start
 def start(message):
     menu_id = registration(message)
-    text, keyboard = menus.main()
+    text, keyboard = menus.main(None, message)
     bot.send_message(message.chat.id, text, reply_markup=keyboard, parse_mode="MarkdownV2")
     bot.delete_message(message.chat.id, message.id)
     if menu_id:
@@ -44,9 +44,12 @@ def callback_query(call):  # работа с вызовами inline кнопо�
     if (call.data).split(":")[0] == "return":
         menu_name = (call.data).split(":")[1]
         open_menu = getattr(menus, menu_name)
-        text, keyboard = open_menu()
+        text, keyboard = open_menu(call)
         bot.edit_message_text(chat_id=user_id, message_id=menu_id, text=text, reply_markup=keyboard, parse_mode="MarkdownV2")
 
+    elif (call.data).split(":")[0] == "open_book":
+        text, keyboard = menus.open_book(call, (call.data).split(":")[1])
+        bot.edit_message_text(chat_id=user_id, message_id=menu_id, text=text, reply_markup=keyboard, parse_mode="MarkdownV2")
 
 print(f"бот запущен...")
 def start_polling():

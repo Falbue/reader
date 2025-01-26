@@ -93,7 +93,7 @@ def estimate_pages(file_path):
 def add_book(user_id, file_name):
     date, time = now_time()
     date = f"{date} {time}"
-    SQL_request("""INSERT INTO books (name_file, name, time_add, user_id) VALUES (?, ?, ?, ?)""", (file_name, file_name, date, user_id))
+    SQL_request("""INSERT INTO books (name_file, name, time_add, user_id) VALUES (?, ?, ?, ?)""", (file_name, file_name.rsplit('.', 1)[0], date, user_id))
     pages = estimate_pages(file_name)
     update_book_data(user_id, file_name, name=file_name.rsplit('.', 1)[0], pages=pages, save_page=0)
 
