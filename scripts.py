@@ -10,6 +10,7 @@ DB_NAME = 'reader.db'
 DB_PATH = f"{DB_NAME}"
 if not os.path.exists(DB_PATH):
     import create_db
+SAVE_FOLDER = 'books'
 
 
 def now_time():  # Получение текущего времени по МСК
@@ -39,16 +40,17 @@ def create_folder(path):
     if not os.path.exists(path):
         os.makedirs(path)
 
-def markdown(text, full=False):  # экранирование только для телеграма
-    if full == True: special_characters = r'*|~[]()>#+-=|{}._!\\'
-    else: special_characters = r'>#+-=|{}._!'
-    escaped_text = ''
-    for char in text:
-        if char in special_characters:
-            escaped_text += f'\\{char}'
-        else:
-            escaped_text += char
-    return escaped_text
+def save_file(document, bot):
+    create_folder(SAVE_FOLDER)
+    file_info = bot.get_file(document.file_id)
+    downloaded_file = bot.download_file(file_info.file_path)
+    unique_file_name = get_unique_filename(SAVE_FOLDER, document.file_name)
+    save_path = os.path.join(SAVE_FOLDER, unique_file_name)
+    
+    with open(save_path, 'wb') as new_file:
+        new_file.write(downloaded_file)
+    
+    return unique_file_name
 
 def get_unique_filename(base_path, filename):
     name, ext = os.path.splitext(filename)
@@ -58,6 +60,17 @@ def get_unique_filename(base_path, filename):
         new_filename = f"{name}_{counter}{ext}"
         counter += 1
     return new_filename
+
+def markdown(text, full=False):  # экранирование
+    if full == True: special_characters = r'*|~[]()>#+-=|{}._!'
+    else: special_characters = r'>#+-=|{}.!'
+    escaped_text = ''
+    for char in text:
+        if char in special_characters:
+            escaped_text += f'\\{char}'
+        else:
+            escaped_text += char
+    return escaped_text
 
 def registration(message):
     user_id = message.chat.id
@@ -99,16 +112,18 @@ def get_book_content(file_path, page=None):
 def add_book(user_id, file_name):
     date, time = now_time()
     date = f"{date} {time}"
-    SQL_request("""INSERT INTO books (name_file, name, time_add, user_id) VALUES (?, ?, ?, ?)""", (file_name, file_name.rsplit('.', 1)[0], date, user_id))
+    SQL_request("""INSERT INTO books (filename, time_add, user_id) VALUES (?, ?, ?)""", (file_name, date, user_id))
     pages = get_book_content(file_name)
     update_book_data(user_id, file_name, name=file_name.rsplit('.', 1)[0], pages=pages, save_page=0)
 
-def update_book_data(user_id, book_name, name=None, pages=None, save_page=None, status=None):
+def update_book_data(user_id, book_name, name=None, author=None, pages=None, save_page=None, status=None):
     user = SQL_request("SELECT * FROM users WHERE id = ?", (user_id,))
     data = json.loads(user[4]) if user[4] else {}
     if book_name in data:
         if name is not None:
             data[book_name]['name'] = name
+        if author is not None:
+            data[book_name]['author'] = author
         if pages is not None:
             data[book_name]['pages'] = pages
         if save_page is not None:
@@ -118,6 +133,7 @@ def update_book_data(user_id, book_name, name=None, pages=None, save_page=None, 
     else:
         data[book_name] = {
             'name': name if name is not None else book_name,
+            'author': author if author is not None else "Не указан",
             'pages': pages if pages is not None else 0,
             'save_page': save_page if save_page is not None else 0,
             'status': status if status is not None else 'close'
@@ -130,3 +146,16 @@ def book_data(user_id, book_id):
     books_list = list(books.items())
     book_data = books_list[int(book_id)]
     return book_data
+
+def rename_book_data(message, call, data):
+    try:
+        text = message.text
+        user_id = message.chat.id
+        book_id = data[1]
+        file_name, book_info = book_data(user_id, book_id)
+        if data[0] == "name":
+            update_book_data(user_id, file_name, name=text)
+        elif data[0] == "author":
+            update_book_data(user_id, file_name, author=text)
+        return True
+    except: return False

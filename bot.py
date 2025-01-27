@@ -13,7 +13,13 @@ bot = telebot.TeleBot(config.API)
 ALLOWED_EXTENSIONS = {'.txt'}
 
 
-SAVE_FOLDER = 'books'
+def step_handler(message, menu_id, call, data, function_name, open_menus, attr=None):
+    bot.delete_message(message.chat.id, message.message_id)
+    menu_function = globals().get(function_name)
+    success = menu_function(message, call, data)
+    if success == True: text, keyboard = open_menus[0](*attr)
+    elif success == False: text, keyboard = open_menus[1](*attr)
+    bot.edit_message_text(chat_id=call.message.chat.id, message_id=menu_id, text=text, reply_markup=keyboard, parse_mode="MarkdownV2")
 
 
 # ОБРАБОТКА КОМАНД
@@ -55,6 +61,15 @@ def callback_query(call):  # работа с вызовами inline кнопо�
         current_page = int(data[2])
         text, keyboard = menus.read_book(call, book_id, current_page)
 
+    elif (call.data).split("-")[0] == "edit":
+        type_edit = (call.data).split(":")[0].split("-")[1]
+        book_id = (call.data).split(":")[1]
+        data = [type_edit, book_id]
+        open_menus = [getattr(menus, "open_book"), getattr(menus, "edit_book")]
+        attr = [call, book_id]
+        text, keyboard = menus.edit_book(call, book_id, type_edit)
+        bot.register_next_step_handler(call.message, step_handler, menu_id, call, data, "rename_book_data", open_menus, attr)
+
     bot.edit_message_text(chat_id=user_id, message_id=menu_id, text=text, reply_markup=keyboard, parse_mode="MarkdownV2")
 
 print(f"бот запущен...")
@@ -71,21 +86,16 @@ def handle_document(message):
     user_id = message.chat.id
     user = SQL_request("SELECT * FROM users WHERE id = ?", (int(user_id),))
     bot.edit_message_text(chat_id=user_id, message_id=user[2], text="Обработка файла\.\.\.", parse_mode="MarkdownV2")
+    
     file_name = message.document.file_name
     file_extension = os.path.splitext(file_name)[1].lower()
+    
     if file_extension not in ALLOWED_EXTENSIONS:
         text, keyboard = menus.get_book(True)
         print("Неверный формат книги")
     else:
         try:
-            create_folder(SAVE_FOLDER)
-            file_info = bot.get_file(message.document.file_id)
-            downloaded_file = bot.download_file(file_info.file_path)
-            unique_file_name = get_unique_filename(SAVE_FOLDER, file_name)
-            save_path = os.path.join(SAVE_FOLDER, unique_file_name)       
-            with open(save_path, 'wb') as new_file:
-                new_file.write(downloaded_file)
-    
+            unique_file_name = save_file(message.document, bot)
             add_book(user_id, unique_file_name)
             text, keyboard = menus.get_book()
         except Exception as e:

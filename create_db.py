@@ -12,10 +12,10 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS users (
 )''')
 cursor.execute('''CREATE TABLE IF NOT EXISTS books (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name_file TEXT,
-    name TEXT,
+    filename TEXT,
     time_add DATE,
-    user_id INTEGER
+    user_id INTEGER,
+    status TEXT DEFAULT 'add'
 )''')
 
 connect.commit()

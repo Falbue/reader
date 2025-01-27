@@ -48,16 +48,20 @@ def get_book(error=False):
 def open_book(call, book_id):
     user_id = call.message.chat.id
     file_name, book_info = book_data(user_id, book_id)
-    name = book_info['name']
-    pages = book_info['pages']
-    save_page = book_info['save_page']
-    status = book_info['status']
+    name = markdown(str(book_info['name']), True)
+    author = markdown(str(book_info['author']), True)
+    pages = markdown(str(book_info['pages']), True)
+    save_page = markdown(str(book_info['save_page']), True)
+    status = markdown(str(book_info['status']), True)
 
-    text = markdown(locale["menu"]["open_book"].format(name=name,pages=pages,save_page=save_page, status=status))
+    text = markdown(locale["menu"]["open_book"].format(name=name, author=author, pages=pages, save_page=save_page, status=status))
     btn_return = InlineKeyboardButton(locale["button"]["return"], callback_data="return:main")
+    btn_edit_name = InlineKeyboardButton(locale["button"]["edit_name"], callback_data=f"edit-name:{book_id}")
+    btn_edit_author = InlineKeyboardButton(locale["button"]["edit_author"], callback_data=f"edit-author:{book_id}")
     btn_read = InlineKeyboardButton(locale["button"]["read"], callback_data=f"read:{book_id}:{save_page}")
     keyboard = InlineKeyboardMarkup(row_width=2)
     keyboard.add(btn_read)
+    keyboard.add(btn_edit_name, btn_edit_author)
     keyboard.add(btn_return)
     return text, keyboard
 
@@ -72,12 +76,22 @@ def read_book(call, book_id, save_page):
     keyboard = InlineKeyboardMarkup(row_width=2)
     buttons = []
     if save_page > 0:
-        btn_back = InlineKeyboardButton('⬅️ Назад', callback_data=f'read:{book_id}:{save_page-1}')
+        btn_back = InlineKeyboardButton(locale["button"]["back"], callback_data=f'read:{book_id}:{save_page-1}')
         buttons.append(btn_back)
     if save_page < pages:
-        btn_next = InlineKeyboardButton('Вперёд ➡️', callback_data=f'read:{book_id}:{save_page+1}')
+        btn_next = InlineKeyboardButton(locale["button"]["next"], callback_data=f'read:{book_id}:{save_page+1}')
         buttons.append(btn_next)
-    btn_close = InlineKeyboardButton('❌ Закрыть', callback_data=f'open_book:{book_id}')
+    btn_close = InlineKeyboardButton(locale["button"]["close"], callback_data=f'open_book:{book_id}')
     keyboard.add(*buttons)
     keyboard.add(btn_close)
+    return text, keyboard
+
+def edit_book(call, book_id, type_edit=None):
+    if type_edit is None: edit = "edit_error"
+    elif type_edit == "name": edit = "edit_name"
+    elif type_edit == "author": edit = "edit_author"
+    text = markdown(locale["menu"][edit])
+    keyboard = InlineKeyboardMarkup(row_width=1)
+    btn_return = InlineKeyboardButton(locale["button"]["return"], callback_data=f"open_book:{book_id}")
+    keyboard.add(btn_return)
     return text, keyboard
