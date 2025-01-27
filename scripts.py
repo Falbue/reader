@@ -63,7 +63,7 @@ def get_unique_filename(base_path, filename):
 
 def markdown(text, full=False):  # экранирование
     if full == True: special_characters = r'*|~[]()>#+-=|{}._!'
-    else: special_characters = r'>#+-=|{}.!'
+    else: special_characters = r'>#+-={}.!'
     escaped_text = ''
     for char in text:
         if char in special_characters:
@@ -87,7 +87,7 @@ def registration(message):
         SQL_request("""UPDATE users SET message = ? WHERE id = ?""", (message_id+1, user_id))  # добавление telegram_id нового меню
         return menu_id
 
-def get_book_content(file_path, page=None):
+def get_book_content(file_path, page=None, user_id=None):
     encodings = ['utf-8', 'windows-1251', 'koi8-r', 'iso-8859-5']
     text = ""
     for encoding in encodings:
@@ -116,7 +116,7 @@ def get_book_content(file_path, page=None):
             start = end
         return pages
     
-    pages = split_text_into_pages(text, 2000)
+    pages = split_text_into_pages(text, int(config_data(user_id, "tg_pages")))
     
     if page is not None:
         if page < 0 or page >= len(pages):
@@ -156,12 +156,25 @@ def update_book_data(user_id, book_name, name=None, author=None, pages=None, sav
         }
     SQL_request("""UPDATE users SET read = ? WHERE id = ?""", (json.dumps(data), user_id))
 
+def update_config(user_id, tg_pages=None):
+    user = SQL_request("SELECT * FROM users WHERE id = ?", (user_id,))
+    data = json.loads(user[5]) if user[5] else {}
+    if tg_pages is not None: data["tg_pages"] = tg_pages
+    SQL_request("""UPDATE users SET config = ? WHERE id = ?""", (json.dumps(data), user_id))
+
 def book_data(user_id, book_id):
     user = SQL_request("SELECT * FROM users WHERE id = ?", (user_id,))
     books = json.loads(user[4])
     books_list = list(books.items())
     book_data = books_list[int(book_id)]
     return book_data
+
+def config_data(user_id, config_type=None):
+    user = SQL_request("SELECT * FROM users WHERE id = ?", (user_id,))
+    config = json.loads(user[5])
+    if config_type is not None:
+        config = config[config_type]
+    return config
 
 def rename_book_data(message, call, data):
     try:

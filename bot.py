@@ -36,7 +36,7 @@ def command_handler(message):
     user_id = message.chat.id
     user = SQL_request("SELECT * FROM users WHERE id = ?", (int(user_id),))
     text, keyboard = menus.loading()
-    bot.edit_message_text(chat_id=user_id, message_id=user[2], text=text, reply_markup=keyboard, parse_mode="MarkdownV2")
+    if user: bot.edit_message_text(chat_id=user_id, message_id=user[2], text=text, reply_markup=keyboard, parse_mode="MarkdownV2")
     if message.text == "/start":
         menu_id = registration(message)
         if menu_id:
@@ -83,6 +83,15 @@ def callback_query(call):  # работа с вызовами inline кнопо�
         attr = [call, book_id]
         text, keyboard = menus.edit_book(call, book_id, type_edit)
         bot.register_next_step_handler(call.message, step_handler, menu_id, call, data, "rename_book_data", open_menus, attr)
+
+    elif (call.data).split(":")[0] == "tg_pages":
+        tg_pages = (call.data).split(":")[1]
+        update_config(user_id, tg_pages)
+        text, keyboard = menus.settings()
+
+    else:
+        open_menu = getattr(menus, call.data)
+        text, keyboard = open_menu(call)
 
     bot.edit_message_text(chat_id=user_id, message_id=menu_id, text=text, reply_markup=keyboard, parse_mode="MarkdownV2")
 

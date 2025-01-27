@@ -59,8 +59,10 @@ def open_book(call, book_id):
     pages = markdown(str(book_info['pages']), True)
     save_page = markdown(str(book_info['save_page']), True)
     status = markdown(str(book_info['status']), True)
+    tg_pages = config_data(user_id, "tg_pages")
+    tg_pages = int(pages) * (2000 / int(tg_pages))
 
-    text = markdown(locale["menu"]["open_book"].format(name=name, author=author, pages=pages, save_page=save_page))
+    text = markdown(locale["menu"]["open_book"].format(name=name, author=author, pages=pages, save_page=save_page, tg_pages=tg_pages))
     btn_return = InlineKeyboardButton(locale["button"]["return"], callback_data="return:main")
     btn_edit_name = InlineKeyboardButton(locale["button"]["edit_name"], callback_data=f"edit-name:{book_id}")
     btn_edit_author = InlineKeyboardButton(locale["button"]["edit_author"], callback_data=f"edit-author:{book_id}")
@@ -75,9 +77,11 @@ def read_book(call, book_id, save_page):
     user_id = call.message.chat.id
     file_name, book_info = book_data(user_id, book_id)
     pages = book_info['pages']
+    tg_pages = config_data(user_id, "tg_pages")
+    pages = int(pages) * (2000 / int(tg_pages))
     update_book_data(user_id, file_name, save_page=save_page)
     
-    text = markdown(f"{get_book_content(file_name, int(save_page))}", True)
+    text = markdown(f"{get_book_content(file_name, int(save_page), user_id)}", True)
 
     keyboard = InlineKeyboardMarkup(row_width=2)
     buttons = []
@@ -102,10 +106,13 @@ def edit_book(call, book_id, type_edit=None):
     keyboard.add(btn_return)
     return text, keyboard
 
-def settings():
+def settings(call=None):
     text = markdown(locale["menu"]["settings"])
     keyboard = InlineKeyboardMarkup()
+    btn_config = InlineKeyboardButton(locale["button"]["config_page"], callback_data="config_page")
+    # btn_return = InlineKeyboardButton(locale["button"]["config_page"], callback_data="config_page")
     btn_return = InlineKeyboardButton(locale["button"]["return"], callback_data="return:main")
+    keyboard.add(btn_config)
     keyboard.add(btn_return)
     return text, keyboard
 
@@ -113,5 +120,17 @@ def help():
     text = markdown(locale["menu"]["help"])
     keyboard = InlineKeyboardMarkup()
     btn_return = InlineKeyboardButton(locale["button"]["return"], callback_data="return:main")
+    keyboard.add(btn_return)
+    return text, keyboard
+
+def config_page(call):
+    text = markdown(locale["menu"]["config_page"])
+    keyboard = InlineKeyboardMarkup(row_width=4)
+    data = {}
+    for i in range(500, 2001, 500):
+        data[i] = i
+    buttons = create_buttons(data, "tg_pages")
+    btn_return = InlineKeyboardButton(locale["button"]["return"], callback_data="return:settings")
+    keyboard.add(*buttons)
     keyboard.add(btn_return)
     return text, keyboard
