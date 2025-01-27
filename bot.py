@@ -12,6 +12,13 @@ print(VERSION)
 bot = telebot.TeleBot(config.API)
 ALLOWED_EXTENSIONS = {'.txt'}
 
+commands = [  # КОМАНДЫ
+telebot.types.BotCommand("start", "Перезапуск бота"),
+telebot.types.BotCommand("help", "Помощь"),
+telebot.types.BotCommand("settings", "Настройки"),
+]
+bot.set_my_commands(commands)
+
 
 def step_handler(message, menu_id, call, data, function_name, open_menus, attr=None):
     bot.delete_message(message.chat.id, message.message_id)
@@ -23,17 +30,22 @@ def step_handler(message, menu_id, call, data, function_name, open_menus, attr=N
 
 
 # ОБРАБОТКА КОМАНД
-@bot.message_handler(commands=['start'])  # обработка команды start
-def start(message):
-    menu_id = registration(message)
-    text, keyboard = menus.main(None, message)
-    bot.send_message(message.chat.id, text, reply_markup=keyboard, parse_mode="MarkdownV2")
+@bot.message_handler()
+def command_handler(message):
     bot.delete_message(message.chat.id, message.id)
-    if menu_id:
-        try:
-            bot.delete_message(message.chat.id, menu_id)
-        except:
-            pass
+    user_id = message.chat.id
+    user = SQL_request("SELECT * FROM users WHERE id = ?", (int(user_id),))
+    if message.text == "/start":
+        menu_id = registration(message)
+        text, keyboard = menus.main(None, message)
+        bot.send_message(message.chat.id, text, reply_markup=keyboard, parse_mode="MarkdownV2")
+        if menu_id:
+            try: bot.delete_message(message.chat.id, menu_id)
+            except: pass
+    else:
+        if message.text == "/settings": text, keyboard = menus.settings()
+        elif message.text == "/help": text, keyboard = menus.help()
+        bot.edit_message_text(chat_id=user_id, message_id=user[2], text=text, reply_markup=keyboard, parse_mode="MarkdownV2")
 
 
 # ОБРАБОТКА ВЫЗОВОВ

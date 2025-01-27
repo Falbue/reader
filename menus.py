@@ -55,7 +55,7 @@ def open_book(call, book_id):
     save_page = markdown(str(book_info['save_page']), True)
     status = markdown(str(book_info['status']), True)
 
-    text = markdown(locale["menu"]["open_book"].format(name=name, author=author, pages=pages, save_page=save_page, status=status))
+    text = markdown(locale["menu"]["open_book"].format(name=name, author=author, pages=pages, save_page=save_page))
     btn_return = InlineKeyboardButton(locale["button"]["return"], callback_data="return:main")
     btn_edit_name = InlineKeyboardButton(locale["button"]["edit_name"], callback_data=f"edit-name:{book_id}")
     btn_edit_author = InlineKeyboardButton(locale["button"]["edit_author"], callback_data=f"edit-author:{book_id}")
@@ -94,5 +94,19 @@ def edit_book(call, book_id, type_edit=None):
     text = markdown(locale["menu"][edit])
     keyboard = InlineKeyboardMarkup(row_width=1)
     btn_return = InlineKeyboardButton(locale["button"]["return"], callback_data=f"open_book:{book_id}")
+    keyboard.add(btn_return)
+    return text, keyboard
+
+def settings():
+    text = markdown(locale["menu"]["settings"])
+    keyboard = InlineKeyboardMarkup()
+    btn_return = InlineKeyboardButton(locale["button"]["return"], callback_data="return:main")
+    keyboard.add(btn_return)
+    return text, keyboard
+
+def help():
+    text = markdown(locale["menu"]["help"])
+    keyboard = InlineKeyboardMarkup()
+    btn_return = InlineKeyboardButton(locale["button"]["return"], callback_data="return:main")
     keyboard.add(btn_return)
     return text, keyboard
