@@ -99,8 +99,24 @@ def get_book_content(file_path, page=None):
             continue
     else:
         raise Exception("Не удалось определить кодировку файла.")
+
+    def split_text_into_pages(text, page_size):
+        pages = []
+        start = 0
+        while start < len(text):
+            end = start + page_size
+            if end >= len(text):
+                pages.append(text[start:])
+                break
+            while end > start and text[end] not in (' ', '\n', '\t', '\r'):
+                end -= 1
+            if end == start:
+                end = start + page_size
+            pages.append(text[start:end])
+            start = end
+        return pages
     
-    pages = [text[i:i+2000] for i in range(0, len(text), 2000)]
+    pages = split_text_into_pages(text, 2000)
     
     if page is not None:
         if page < 0 or page >= len(pages):
