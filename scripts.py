@@ -79,8 +79,8 @@ def registration(message):
     date, time  = now_time()
     user = SQL_request("SELECT * FROM users WHERE id = ?", (user_id,))
     if user is None:
-        SQL_request("""INSERT INTO users (id, message, time_registration)
-                          VALUES (?, ?, ?)""", (user_id, message_id+1, date))
+        SQL_request("""INSERT INTO users (id, message, time_registration, config)
+                          VALUES (?, ?, ?, ?)""", (user_id, message_id+1, date, json.dumps({"tg_pages": "1000"})))
         print(f"Зарегистрирован новый пользователь")
     else:
         menu_id = SQL_request("SELECT message FROM users WHERE id = ?", (user_id,))
@@ -116,13 +116,13 @@ def get_book_content(file_path, page=None, user_id=None):
             start = end
         return pages
     
-    pages = split_text_into_pages(text, int(config_data(user_id, "tg_pages")))
-    
     if page is not None:
+        pages = split_text_into_pages(text, int(config_data(user_id, "tg_pages")))
         if page < 0 or page >= len(pages):
             return "Книга прочитана!"
         return pages[page]
     else:
+        pages = split_text_into_pages(text, 2000)
         return len(pages)
 
 def add_book(user_id, file_name):

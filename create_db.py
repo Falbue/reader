@@ -8,7 +8,7 @@ cursor.execute('''CREATE TABLE IF NOT EXISTS users (
     message INTEGER,
     time_registration DATE,
     read JSON DEFAULT '{}',
-    config JSON DEFAULT '{}'
+    config JSON DEFAULT '{"tg_pages": "1000"}'
 )''')
 cursor.execute('''CREATE TABLE IF NOT EXISTS books (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

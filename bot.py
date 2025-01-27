@@ -7,7 +7,7 @@ from scripts import *
 import menus
 
 
-VERSION="0.0.2"
+VERSION="0.3.1"
 print(VERSION)
 bot = telebot.TeleBot(config.API)
 ALLOWED_EXTENSIONS = {'.txt'}
@@ -129,5 +129,5 @@ def handle_document(message):
     bot.edit_message_text(chat_id=user_id, message_id=user[2], text=text, reply_markup=keyboard, parse_mode="MarkdownV2")
 
 if __name__ == "__main__":
-    # start_polling()
-    bot.polling()
+    start_polling()
+    # bot.polling()
