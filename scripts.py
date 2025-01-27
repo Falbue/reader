@@ -74,27 +74,33 @@ def registration(message):
         SQL_request("""UPDATE users SET message = ? WHERE id = ?""", (message_id+1, user_id))  # добавление telegram_id нового меню
         return menu_id
 
-def estimate_pages(file_path):
+def get_book_content(file_path, page=None):
     encodings = ['utf-8', 'windows-1251', 'koi8-r', 'iso-8859-5']
+    text = ""
     for encoding in encodings:
         try:
-            with open(f"books/{file_path}", 'r', encoding=encoding) as file:
-                text = file.read()
+            with open(f"books/{file_path}", 'r', encoding=encoding) as f:
+                text = f.read()
             break
-        except UnicodeDecodeError: continue
-    else: raise Exception("Не удалось определить кодировку файла.")
-    chars_per_page = 2000
-    pages_by_chars = len(text) / chars_per_page
-    lines = text.splitlines()
-    lines_per_page = 50
-    pages_by_lines = len(lines) / lines_per_page
-    return round((pages_by_chars + pages_by_lines) / 2)
+        except UnicodeDecodeError:
+            continue
+    else:
+        raise Exception("Не удалось определить кодировку файла.")
+    
+    pages = [text[i:i+2000] for i in range(0, len(text), 2000)]
+    
+    if page is not None:
+        if page < 0 or page >= len(pages):
+            return "Книга прочитана!"
+        return pages[page]
+    else:
+        return len(pages)
 
 def add_book(user_id, file_name):
     date, time = now_time()
     date = f"{date} {time}"
     SQL_request("""INSERT INTO books (name_file, name, time_add, user_id) VALUES (?, ?, ?, ?)""", (file_name, file_name.rsplit('.', 1)[0], date, user_id))
-    pages = estimate_pages(file_name)
+    pages = get_book_content(file_name)
     update_book_data(user_id, file_name, name=file_name.rsplit('.', 1)[0], pages=pages, save_page=0)
 
 def update_book_data(user_id, book_name, name=None, pages=None, save_page=None, status=None):
@@ -117,3 +123,10 @@ def update_book_data(user_id, book_name, name=None, pages=None, save_page=None, 
             'status': status if status is not None else 'close'
         }
     SQL_request("""UPDATE users SET read = ? WHERE id = ?""", (json.dumps(data), user_id))
+
+def book_data(user_id, book_id):
+    user = SQL_request("SELECT * FROM users WHERE id = ?", (user_id,))
+    books = json.loads(user[4])
+    books_list = list(books.items())
+    book_data = books_list[int(book_id)]
+    return book_data

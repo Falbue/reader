@@ -47,11 +47,7 @@ def get_book(error=False):
 
 def open_book(call, book_id):
     user_id = call.message.chat.id
-    user = SQL_request("SELECT * FROM users WHERE id = ?", (user_id,))
-    books = json.loads(user[4])
-    books_list = list(books.items())
-    book_data = books_list[0]
-    file_name, book_info = book_data
+    file_name, book_info = book_data(user_id, book_id)
     name = book_info['name']
     pages = book_info['pages']
     save_page = book_info['save_page']
@@ -59,8 +55,29 @@ def open_book(call, book_id):
 
     text = markdown(locale["menu"]["open_book"].format(name=name,pages=pages,save_page=save_page, status=status))
     btn_return = InlineKeyboardButton(locale["button"]["return"], callback_data="return:main")
-    btn_read = InlineKeyboardButton(locale["button"]["read"], callback_data=f"read:{book_id}")
+    btn_read = InlineKeyboardButton(locale["button"]["read"], callback_data=f"read:{book_id}:{save_page}")
     keyboard = InlineKeyboardMarkup(row_width=2)
     keyboard.add(btn_read)
     keyboard.add(btn_return)
+    return text, keyboard
+
+def read_book(call, book_id, save_page):
+    user_id = call.message.chat.id
+    file_name, book_info = book_data(user_id, book_id)
+    pages = book_info['pages']
+    update_book_data(user_id, file_name, save_page=save_page)
+    
+    text = markdown(f"{get_book_content(file_name, int(save_page))}", True)
+
+    keyboard = InlineKeyboardMarkup(row_width=2)
+    buttons = []
+    if save_page > 0:
+        btn_back = InlineKeyboardButton('⬅️ Назад', callback_data=f'read:{book_id}:{save_page-1}')
+        buttons.append(btn_back)
+    if save_page < pages:
+        btn_next = InlineKeyboardButton('Вперёд ➡️', callback_data=f'read:{book_id}:{save_page+1}')
+        buttons.append(btn_next)
+    btn_close = InlineKeyboardButton('❌ Закрыть', callback_data=f'open_book:{book_id}')
+    keyboard.add(*buttons)
+    keyboard.add(btn_close)
     return text, keyboard
