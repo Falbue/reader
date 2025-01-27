@@ -21,8 +21,10 @@ def main(call, message=None):
     if message is not None: user_id = message.chat.id
     else: user_id = call.message.chat.id
     user = SQL_request("SELECT * FROM users WHERE id = ?", (user_id,))
+    data = json.loads(user[4])
     text = markdown(locale["menu"]["main"])
-    btn_stat = InlineKeyboardButton(locale["button"]["stat"], callback_data="stat")
+    if data == {}:
+       text = markdown(locale["menu"]["hello"]) 
     keyboard = InlineKeyboardMarkup(row_width=2)
     data = json.loads(user[4]) if user[4] else {}
     buttons = {}
@@ -34,7 +36,6 @@ def main(call, message=None):
             i+=1
         books = create_buttons(buttons, "open_book")
         keyboard.add(*books)
-    keyboard.add(btn_stat)
     return text, keyboard
 
 def get_book(error=False):
