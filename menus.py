@@ -17,6 +17,11 @@ def create_buttons(data, prefix):
         buttons.append(button)
     return buttons
 
+def loading():
+    text = markdown(locale["menu"]["loading"])
+    keyboard = None
+    return text, keyboard
+
 def main(call, message=None):
     if message is not None: user_id = message.chat.id
     else: user_id = call.message.chat.id
