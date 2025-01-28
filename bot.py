@@ -7,7 +7,7 @@ from scripts import *
 import menus
 
 
-VERSION="0.3.2.1"
+VERSION="0.3.3"
 print(VERSION)
 bot = telebot.TeleBot(config.API)
 ALLOWED_EXTENSIONS = {'.txt'}
