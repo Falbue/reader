@@ -32,11 +32,9 @@ def step_handler(message, menu_id, call, data, function_name, open_menus, attr=N
 # ОБРАБОТКА КОМАНД
 @bot.message_handler()
 def command_handler(message):
-    bot.delete_message(message.chat.id, message.id)
     user_id = message.chat.id
     user = SQL_request("SELECT * FROM users WHERE id = ?", (int(user_id),))
     text, keyboard = menus.loading()
-    if user: bot.edit_message_text(chat_id=user_id, message_id=user[2], text=text, reply_markup=keyboard, parse_mode="MarkdownV2")
     if message.text == "/start":
         menu_id = registration(message)
         if menu_id:
@@ -45,9 +43,11 @@ def command_handler(message):
         text, keyboard = menus.main(None, message)
         bot.send_message(message.chat.id, text, reply_markup=keyboard, parse_mode="MarkdownV2")
     else:
+        if user: bot.edit_message_text(chat_id=user_id, message_id=user[2], text=text, reply_markup=keyboard, parse_mode="MarkdownV2")
         if message.text == "/settings": text, keyboard = menus.settings()
         elif message.text == "/help": text, keyboard = menus.help()
         bot.edit_message_text(chat_id=user_id, message_id=user[2], text=text, reply_markup=keyboard, parse_mode="MarkdownV2")
+    bot.delete_message(message.chat.id, message.id)
 
 
 # ОБРАБОТКА ВЫЗОВОВ
